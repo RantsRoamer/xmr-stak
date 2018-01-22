@@ -48,7 +48,7 @@ BOOL SelfElevate(const char* my_path, const std::string& params)
 
 	// Loiter in the background to make scripting easier
 	printer::inst()->print_msg(L0, "This window has been opened because xmr-stak needed to run as administrator.  It can be safely closed now.");
-	WaitForSingleObject(shExecInfo.hProcess, INFINITE);
+	WaitForSingleObject(shExecInfo.hProcess, 1);
 	std::exit(0);
 
 	return TRUE;

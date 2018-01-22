@@ -39,7 +39,7 @@ BOOL SelfElevate(const char* my_path, const std::string& params)
 	shExecInfo.nShow = SW_SHOW;
 	if (params::inst().useHide)
   {
-    shExInfo.nShow = SW_HIDE;
+    shExecInfo.nShow = SW_HIDE;
   }
 	shExecInfo.hInstApp = NULL;
 

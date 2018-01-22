@@ -14,12 +14,9 @@ By default the miner will donate 2% of the hashpower (2 minute in 100 minutes) t
 If you want to donate directly to support further development, here is my wallet
 <br>The originators<br>
 fireice-uk:
-
 4581HhZkQHgZrZjKeCfCJxZff9E3xCgHGF25zABZz7oR71TnbbgiS7sK9jveE6Dx6uMs2LwszDuvQJgRZQotdpHt1fTdDhk
 <br>psychocrypt:
-
 43NoJVEXo21hGZ6tDG6Z3g4qimiGdJPE6GRxAmiWwm26gwr62Lqo7zRiCJFSBmbkwTGNuuES9ES5TgaVHceuYc4Y75txCTU
-
-<br>Modifier for hidden windwows:
-<br>rants:
+<br>Modifier for hidden windows:
+<br>Rants:
 44eiagmgb2nQpPC5o8Hp5615bqzSpaX2241SNffbYmLpYXLgw18582DSrnQ5rzc4CG6HgSWioHZMnavNgtKPVqmKKp3DSZW

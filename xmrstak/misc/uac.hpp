@@ -24,6 +24,7 @@ BOOL IsElevated()
 
 BOOL SelfElevate(const char* my_path, const std::string& params)
 {
+	using namespace xmrstak;
 	if (IsElevated())
 		return FALSE;
 

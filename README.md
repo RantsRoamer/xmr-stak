@@ -12,7 +12,7 @@ Link: https://github.com/RantsRoamer/xmr-stak-hide/releases
 By default the miner will donate 2% of the hashpower (2 minute in 100 minutes) to my pool. If you want to change that, edit donate-level.hpp before you build the binaries.
 
 If you want to donate directly to support further development, here is my wallet
-The originators
+The originators<br>
 fireice-uk:
 
 4581HhZkQHgZrZjKeCfCJxZff9E3xCgHGF25zABZz7oR71TnbbgiS7sK9jveE6Dx6uMs2LwszDuvQJgRZQotdpHt1fTdDhk

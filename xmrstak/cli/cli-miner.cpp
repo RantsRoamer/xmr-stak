@@ -385,6 +385,10 @@ int main(int argc, char *argv[])
 		{
 			params::inst().useNVIDIA = false;
 		}
+		else if(opName.compare("--hide") == 0)
+		{
+			params::inst().useHide = true;
+		}
 		else if(opName.compare("--cpu") == 0)
 		{
 			++i;

@@ -21,7 +21,7 @@ The number of files depends on the available backends.
 2) Fill in the pool url, username and password
 
 `set XMRSTAK_NOWAIT=1` disable the dialog `Press any key to exit.` for non UAC execution.
-
+use --hide to hide window from desktop
 
 ## Usage on Linux & MacOS
 1) Open a terminal within the folder with the binary

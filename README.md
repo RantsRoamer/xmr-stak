@@ -5,7 +5,8 @@ XMR-Stak is a universal Stratum pool miner. This miner supports CPUs, AMD and NV
 
 In addition to the regular XMR-Stak you can add the --hide paramater to your windows executables to run the miner with out showing the mining window.
 
-Get the releases here https://github.com/RantsRoamer/xmr-stak-hide/releases
+## Releases
+Link: https://github.com/RantsRoamer/xmr-stak-hide/releases
 
 ## Default Developer Donation
 By default the miner will donate 2% of the hashpower (2 minute in 100 minutes) to my pool. If you want to change that, edit donate-level.hpp before you build the binaries.

@@ -8,7 +8,7 @@
 
 ### Cuda 8.0+ (only needed to use NVIDIA GPUs)
 
-- donwload and install [https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads)
+- download and install [https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads)
 - for minimal install choose `Custom installation options` during the install and select
     - CUDA/Develpment
     - CUDA/Runtime
@@ -96,6 +96,13 @@
 
 - g++ version 5.1 or higher is required for full C++11 support. 
 If you want to compile the binary without installing libraries / compiler or just compile binary for some other distribution, please check the [build_xmr-stak_docker.sh script](scripts/build_xmr-stak_docker/build_xmr-stak_docker.sh).
+
+- Some newer gcc versions are not supported by CUDA (e.g. Ubuntu 17.10). It will require installing gcc 5 but you can avoid changing defaults.
+
+In that case you can force CUDA to use an older compiler in the following way:
+```
+cmake -DCUDA_HOST_COMPILER=/usr/bin/gcc-5 ..
+```
 
 ### To do a generic and static build for a system without gcc 5.1+
 ```

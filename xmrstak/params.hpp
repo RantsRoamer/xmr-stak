@@ -21,13 +21,18 @@ struct params
 	std::string executablePrefix;
 	std::string binaryName;
 	bool useAMD;
+	bool AMDCache;
 	bool useNVIDIA;
 	bool useCPU;
+	// user selected OpenCL vendor
+	std::string openCLVendor;
 
 	bool poolUseTls = false;
 	std::string poolURL;
 	bool userSetPwd = false;
 	std::string poolPasswd;
+	bool userSetRigid = false;
+	std::string poolRigid;
 	std::string poolUsername;
 	bool nicehashMode = false;
 
@@ -38,6 +43,7 @@ struct params
 	std::string currency;
 
 	std::string configFile;
+	std::string configFilePools;
 	std::string configFileAMD;
 	std::string configFileNVIDIA;
 	std::string configFileCPU;
@@ -46,13 +52,19 @@ struct params
 	std::string minerArg0;
 	std::string minerArgs;
 
+	// block_version >= 0 enable benchmark
+	int benchmark_block_version = -1;
+
 	params() :
 		binaryName("xmr-stak"),
 		executablePrefix(""),
 		useAMD(true),
+		AMDCache(true),
 		useNVIDIA(true),
 		useCPU(true),
+		openCLVendor("AMD"),
 		configFile("config.txt"),
+		configFilePools("pools.txt"),
 		configFileAMD("amd.txt"),
 		configFileCPU("cpu.txt"),
 		configFileNVIDIA("nvidia.txt")
@@ -60,4 +72,4 @@ struct params
 
 };
 
-} // namepsace xmrstak
+} // namespace xmrstak

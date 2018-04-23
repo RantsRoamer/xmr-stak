@@ -24,6 +24,7 @@
 #include <stdarg.h>
 #include <assert.h>
 #include <algorithm>
+#include <chrono>
 
 #include "jpsock.hpp"
 #include "socks.hpp"
@@ -92,8 +93,8 @@ struct jpsock::opq_json_val
 	opq_json_val(const Value* val) : val(val) {}
 };
 
-jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash) :
-	net_addr(sAddr), usr_login(sLogin), usr_pass(sPassword), tls_fp(tls_fp), pool_id(id), pool_weight(pool_weight), pool(dev_pool), nicehash(nicehash),
+jpsock::jpsock(size_t id, const char* sAddr, const char* sLogin, const char* sRigId, const char* sPassword, double pool_weight, bool dev_pool, bool tls, const char* tls_fp, bool nicehash) :
+	net_addr(sAddr), usr_login(sLogin), usr_rigid(sRigId), usr_pass(sPassword), tls_fp(tls_fp), pool_id(id), pool_weight(pool_weight), pool(dev_pool), nicehash(nicehash),
 	connect_time(0), connect_attempts(0), disconnect_time(0), quiet_close(false)
 {
 	sock_init();
@@ -133,6 +134,7 @@ jpsock::~jpsock()
 
 std::string&& jpsock::get_call_error()
 {
+	call_error = false;
 	return std::move(prv->oCallRsp.sCallErr);
 }
 
@@ -189,11 +191,25 @@ bool jpsock::set_socket_error_strerr(const char* a, int res)
 void jpsock::jpsock_thread()
 {
 	jpsock_thd_main();
+
+	if(!bHaveSocketError)
+		set_socket_error("Socket closed.");
+
 	executor::inst()->push_event(ex_event(std::move(sSocketError), quiet_close, pool_id));
 
-	// If a call is wating, send an error to end it
-	bool bCallWaiting = false;
 	std::unique_lock<std::mutex> mlock(call_mutex);
+	bool bWait = prv->oCallRsp.pCallData != nullptr;
+
+	// If a call is waiting, wait a little bit before blowing it out of the water
+	if(bWait)
+	{
+		mlock.unlock();
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		mlock.lock();
+	}
+
+	// If the call is still there send an error to end it
+	bool bCallWaiting = false;
 	if(prv->oCallRsp.pCallData != nullptr)
 	{
 		prv->oCallRsp.bHaveResponse = true;
@@ -213,7 +229,7 @@ void jpsock::jpsock_thread()
 	else
 		disconnect_time = 0;
 
-	std::unique_lock<std::mutex>(job_mutex);
+	std::unique_lock<std::mutex> lck(job_mutex);
 	memset(&oCurrentJob, 0, sizeof(oCurrentJob));
 	bRunning = false;
 }
@@ -290,6 +306,12 @@ bool jpsock::process_line(char* line, size_t len)
 		if(!mt->IsString())
 			return set_socket_error("PARSE error: Protocol error 1");
 
+		if(strcmp(mt->GetString(), "mining.set_extranonce") == 0)
+		{
+			printer::inst()->print_msg(L0, "Detected buggy NiceHash pool code. Workaround engaged.");
+			return true;
+		}
+
 		if(strcmp(mt->GetString(), "job") != 0)
 			return set_socket_error("PARSE error: Unsupported server method ", mt->GetString());
 
@@ -348,6 +370,7 @@ bool jpsock::process_line(char* line, size_t len)
 		{
 			prv->oCallRsp.pCallData = nullptr;
 			prv->oCallRsp.sCallErr.assign(sError, iErrorLn);
+			call_error = true;
 		}
 		else
 			prv->oCallRsp.pCallData->CopyFrom(*mt, prv->callAllocator);
@@ -416,7 +439,7 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 
 	if(motd != nullptr && motd->IsString() && (motd->GetStringLength() & 0x01) == 0)
 	{
-		std::unique_lock<std::mutex>(motd_mutex);
+		std::unique_lock<std::mutex> lck(motd_mutex);
 		if(motd->GetStringLength() > 0)
 		{
 			pool_motd.resize(motd->GetStringLength()/2 + 1);
@@ -431,7 +454,7 @@ bool jpsock::process_pool_job(const opq_json_val* params)
 
 	executor::inst()->push_event(ex_event(oPoolJob, pool_id));
 
-	std::unique_lock<std::mutex>(job_mutex);
+	std::unique_lock<std::mutex> lck(job_mutex);
 	oCurrentJob = oPoolJob;
 	return true;
 }
@@ -440,6 +463,7 @@ bool jpsock::connect(std::string& sConnectError)
 {
 	ext_algo = ext_backend = ext_hashcount = ext_motd = false;
 	bHaveSocketError = false;
+	call_error = false;
 	sSocketError.clear();
 	iJobDiff = 0;
 	connect_attempts++;
@@ -523,8 +547,8 @@ bool jpsock::cmd_login()
 {
 	char cmd_buffer[1024];
 
-	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"login\",\"params\":{\"login\":\"%s\",\"pass\":\"%s\",\"agent\":\"%s\"},\"id\":1}\n",
-		usr_login.c_str(), usr_pass.c_str(), get_version_str().c_str());
+	snprintf(cmd_buffer, sizeof(cmd_buffer), "{\"method\":\"login\",\"params\":{\"login\":\"%s\",\"pass\":\"%s\",\"rigid\":\"%s\",\"agent\":\"%s\"},\"id\":1}\n",
+		usr_login.c_str(), usr_pass.c_str(), usr_rigid.c_str(), get_version_str().c_str());
 
 	opq_json_val oResult(nullptr);
 
@@ -596,7 +620,7 @@ bool jpsock::cmd_login()
 	return true;
 }
 
-bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, xmrstak::iBackend* bend, bool algo_full_cn)
+bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bResult, const char* backend_name, uint64_t backend_hashcount, uint64_t total_hashcount, xmrstak_algo algo)
 {
 	char cmd_buffer[1024];
 	char sNonce[9];
@@ -604,16 +628,41 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 	/*Extensions*/
 	char sAlgo[64] = {0};
 	char sBackend[64] = {0};
-	char sHashcount[64] = {0};
+	char sHashcount[128] = {0};
 
 	if(ext_backend)
-		snprintf(sBackend, sizeof(sBackend), ",\"backend\":\"%s\"", xmrstak::iBackend::getName(bend->backendType));
+		snprintf(sBackend, sizeof(sBackend), ",\"backend\":\"%s\"", backend_name);
 
 	if(ext_hashcount)
-		snprintf(sHashcount, sizeof(sHashcount), ",\"hashcount\":%llu", int_port(bend->iHashCount.load(std::memory_order_relaxed)));
+		snprintf(sHashcount, sizeof(sHashcount), ",\"hashcount\":%llu,\"hashcount_total\":%llu", int_port(backend_hashcount), int_port(total_hashcount));
 
 	if(ext_algo)
-		snprintf(sAlgo, sizeof(sAlgo), ",\"algo\":\"%s\"", algo_full_cn ? "cryptonight" : "cryptonight-lite");
+	{
+		const char* algo_name;
+		switch(algo)
+		{
+		case cryptonight:
+			algo_name = "cryptonight";
+			break;
+		case cryptonight_lite:
+			algo_name = "cryptonight-lite";
+			break;
+		case cryptonight_monero:
+			algo_name = "cryptonight-monerov7";
+			break;
+		case cryptonight_aeon:
+			algo_name = "cryptonight-aeonv7";
+			break;
+		case cryptonight_heavy:
+			algo_name = "cryptonight-heavy";
+			break;
+		default:
+			algo_name = "unknown";
+			break;
+		}
+
+		snprintf(sAlgo, sizeof(sAlgo), ",\"algo\":\"%s\"", algo_name);
+	}
 
 	bin2hex((unsigned char*)&iNonce, 4, sNonce);
 	sNonce[8] = '\0';
@@ -630,13 +679,13 @@ bool jpsock::cmd_submit(const char* sJobId, uint32_t iNonce, const uint8_t* bRes
 
 void jpsock::save_nonce(uint32_t nonce)
 {
-	std::unique_lock<std::mutex>(job_mutex);
+	std::unique_lock<std::mutex> lck(job_mutex);
 	oCurrentJob.iSavedNonce = nonce;
 }
 
 bool jpsock::get_current_job(pool_job& job)
 {
-	std::unique_lock<std::mutex>(job_mutex);
+	std::unique_lock<std::mutex> lck(job_mutex);
 
 	if(oCurrentJob.iWorkLen == 0)
 		return false;
@@ -650,7 +699,7 @@ bool jpsock::get_pool_motd(std::string& strin)
 	if(!ext_motd) 
 		return false;
 
-	std::unique_lock<std::mutex>(motd_mutex);
+	std::unique_lock<std::mutex> lck(motd_mutex);
 	if(pool_motd.size() > 0)
 	{
 		strin.assign(pool_motd);

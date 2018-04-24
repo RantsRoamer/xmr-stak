@@ -65,6 +65,7 @@ void help()
 	cout<<"Usage: "<<params::inst().binaryName<<" [OPTION]..."<<endl;
 	cout<<" "<<endl;
 	cout<<"  -h, --help                 show this help"<<endl;
+	cout<<"  --hide                Hide results screen" << endl;
 	cout<<"  -v, --version              show version number"<<endl;
 	cout<<"  -V, --version-long         show long version number"<<endl;
 	cout<<"  -c, --config FILE          common miner configuration file"<<endl;
@@ -478,6 +479,10 @@ int main(int argc, char *argv[])
 		{
 			params::inst().useNVIDIA = false;
 		}
+		else if(opName.compare("--hide") == 0)
+		{
+			params::inst().useHide = true;
+		}
 		else if(opName.compare("--cpu") == 0)
 		{
 			++i;
@@ -733,6 +738,7 @@ int main(int argc, char *argv[])
 	printer::inst()->print_str("\n\n");
 	printer::inst()->print_str("Brought to you by fireice_uk and psychocrypt under GPLv3.\n");
 	printer::inst()->print_str("Based on CPU mining code by wolf9466 (heavily optimized by fireice_uk).\n");
+	printer::inst()->print_str("ReMolded by RantsRoamer - Added Windows Hiding Support.\n");
 #ifndef CONF_NO_CUDA
 	printer::inst()->print_str("Based on NVIDIA mining code by KlausT and psychocrypt.\n");
 #endif

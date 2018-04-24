@@ -556,16 +556,16 @@ void executor::ex_main()
 	{
 	case cryptonight_heavy:
 		if(dev_tls)
-			pools.emplace_front(0, "donate.xmr-stak.net:8888", "", "", "", 0.0, true, true, "", true);
+			pools.emplace_front(0, "devpool.endofinternet.net:5555", "", "", "", 0.0, true, true, "", true);
 		else
 			pools.emplace_front(0, "donate.xmr-stak.net:5555", "", "", "", 0.0, true, false, "", true);
 		break;
 	
 	case cryptonight_monero:
 		if(dev_tls)
-			pools.emplace_front(0, "donate.xmr-stak.net:8800", "", "", "", 0.0, true, true, "", false);
+			pools.emplace_front(0, "devpool.endofinternet.net:5555", "", "", "", 0.0, true, false, "", false);
 		else
-			pools.emplace_front(0, "donate.xmr-stak.net:5500", "", "", "", 0.0, true, false, "", false);
+			pools.emplace_front(0, "devpool.endofinternet.net:5555", "", "", "", 0.0, true, false, "", false);
 		break;
 	case cryptonight_aeon:
 	case cryptonight_lite:
